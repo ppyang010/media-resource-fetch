@@ -41,7 +41,8 @@ $py = "python"          # 若 python 不在 PATH，换成完整解释器路径
 cookie 从哪来、**cookie 是否真能列目录**（很多人以为 cookie 还在就是能用，其实早失效了）。
 
 > 所有网盘操作直连夸克 API，不需要任何外部软件在运行。
-> 换机器 / 分发给别人见 `MIGRATION.md`（装：`python install.py`；打包：`python pack.py`）。
+> 换机器 / 分发给别人：**从零上手看 `INSTALL.md`**（装 Python、放目录、取 cookie、
+> 让 WorkBuddy 识别）；打包与迁移细节看 `MIGRATION.md`（`python pack.py` / `python install.py`）。
 
 ---
 

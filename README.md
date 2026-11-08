@@ -24,9 +24,13 @@
 
 ## 安装
 
+**第一次装、机器上什么都没有？照 [`INSTALL.md`](INSTALL.md) 走，约 10 分钟**（含 Python 安装和 cookie 获取的每一步）。
+
+已经装好 Python 的话，最短路径：
+
 ```bash
 cd ~/.workbuddy/skills
-git clone https://github.com/<your-name>/media-resource-fetch.git
+git clone https://github.com/ppyang010/media-resource-fetch.git
 cd media-resource-fetch
 python install.py
 ```
@@ -53,7 +57,7 @@ python install.py
 }
 ```
 
-微博只需 `SUB` 和 `SUBP`（Domain 为 `.weibo.com`）。取法与细节坑见 `MIGRATION.md`。
+微博只需 `SUB` 和 `SUBP`（Domain 为 `.weibo.com`）。**逐步取法见 [`INSTALL.md`](INSTALL.md) 第 6 步**，踩坑记录见 `references/known-issues.md`。
 
 ## 用法
 
@@ -81,7 +85,8 @@ python res.py list                            # 看台账
 
 ```
 SKILL.md                  主流程与规则（给 agent 读的说明书）
-MIGRATION.md              安装 / 分发 / 迁移
+INSTALL.md                从零上手：装 Python、放目录、取 cookie、WorkBuddy 识别
+MIGRATION.md              打包 / 分发 / 迁移（维护者用）
 references/
   known-issues.md         踩过的坑、接口参数、渠道实测结论
   resource-library.md     资源库快照（由台账渲染）

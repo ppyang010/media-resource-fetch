@@ -1,7 +1,11 @@
 # 安装 / 分发 / 迁移
 
 这个 skill 是**独立单元**：代码、数据、文档都在自己目录内，
-只依赖 Python 3.9+ 标准库 + 一个夸克 cookie。
+只依赖 Python 3.8+ 标准库 + 一个夸克 cookie。
+
+> **第一次在别人的机器上装？** 看 [`INSTALL.md`](INSTALL.md)——
+> 那里有装 Python、放目录、取 cookie、让 WorkBuddy 识别的逐步指引。
+> 本文档是给维护者看的：怎么打包、怎么迁移、数据放哪。
 
 ---
 
@@ -30,11 +34,11 @@ python pack.py --no-data      # 不带历史记录（干净分发给别人）
 产物在 `dist\`：
 
 ```
-media-resource-fetch-1.0.0.zip
-media-resource-fetch-1.0.0.zip.sha256
+media-resource-fetch-<版本>.zip
+media-resource-fetch-<版本>.zip.sha256
 ```
 
-约 46 KB / 17 个文件。**不含 cookie、不含缓存**——cookie 在
+约 53 KB。**不含 cookie、不含缓存**——cookie 在
 `~/.workbuddy/media-fetch.json`，本来就在 skill 目录外。
 
 ---
@@ -120,7 +124,7 @@ $env:QUARK_COOKIE = "粘贴整串 Cookie"
 ```powershell
 cd "$env:USERPROFILE\.workbuddy\skills\media-resource-fetch\scripts"
 
-python check_env.py               # 1. 自检，五节全 [OK]
+python check_env.py               # 1. 自检，六节全 [OK]
 python res.py list                # 2. 看台账（新机器为空也正常）
 python get.py <分享id> --dry      # 3. 预演一次转存
 ```
