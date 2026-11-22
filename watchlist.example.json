@@ -1,0 +1,64 @@
+{
+  "_说明": "这是模板，复制到 data/watchlist.json 后按自己的剧改。data/ 不进版本库，所以每个人维护自己的清单。",
+  "version": 1,
+  "updated": "2026-11-22",
+  "shows": [
+    {
+      "id": "example-variety",
+      "title": "某综艺 第一季",
+      "dir": "/00影视-待看/某综艺 第一季",
+      "active": true,
+      "kind": "variety",
+      "cadence": "每周六 12:00 上集、周日 12:00 下集",
+      "next_due": "2026-11-28 13:00",
+      "have": "第7期下（4K 3.85G）",
+      "keywords": [
+        "某综艺 第{N}期下",
+        "某综艺"
+      ],
+      "prefer": {
+        "label": "4K",
+        "patterns": [
+          "4K",
+          "2160"
+        ],
+        "min_mb": 2500
+      },
+      "sources": [
+        "weibo",
+        "jiugeku"
+      ],
+      "pending": [],
+      "note": "中午播出的综艺，4K 一般 15:00-16:30 才出，之前只有 906M 压缩版",
+      "added": "2026-11-22"
+    },
+    {
+      "id": "example-series",
+      "title": "某剧",
+      "dir": "/00影视-待看/某剧/4K HDR 60帧",
+      "active": true,
+      "kind": "series",
+      "cadence": "每晚 19:30 更 2 集，共 26 集",
+      "next_due": "2026-11-23 20:00",
+      "have": "第1-6集（4K HDR 60帧）",
+      "keywords": [
+        "某剧"
+      ],
+      "prefer": {
+        "label": "4K HDR 60帧",
+        "patterns": [
+          "60帧"
+        ],
+        "path": "60帧",
+        "min_mb": 2000
+      },
+      "sources": [
+        "jiugeku",
+        "kkpans"
+      ],
+      "pending": [],
+      "note": "分享里常有 3 个并列版本目录，必须 --path 60帧，别混 DV 版",
+      "added": "2026-11-22"
+    }
+  ]
+}

@@ -5,6 +5,10 @@ __pycache__/
 *.pyc
 *.pyo
 
+# 资源库快照由台账渲染，含个人观看记录与网盘路径，不进仓库
+# 分发用空模板 references/resource-library.example.md
+references/resource-library.md
+
 # 安装时产生的旧版本备份
 *.bak-*
 

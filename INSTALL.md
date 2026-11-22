@@ -231,6 +231,21 @@ skill 是给 agent 读的说明书，装完要让 WorkBuddy 重新加载一次�
 | 重启过吗 | skill 列表在启动时扫描 |
 | 要不要手动确认 | 有些版本需要在 skill 管理里启用，看一眼列表里有没有它 |
 
+### 想要自动追更（可选）
+
+手动转存跑通后，可以再挂个定时任务。**追哪些剧由清单文件决定，不由任务决定**：
+
+```powershell
+copy watchlist.example.json data\watchlist.json    # 先拷模板，再改成自己追的剧
+& $py watch.py list                                 # 看清单
+& $py watch.py add --title "某某剧" --dir "/00影视-待看/某某剧" `
+    --cadence "每晚 19:30 更 2 集" --next-due "2026-11-23 20:00"
+```
+
+然后在 WorkBuddy 里说「每天 21:30 按 watchlist 帮我追更」。它会建一个定时任务，
+任务只负责「跑 `watch.py due`、逐条处理」——**以后加剧、减剧、改规格都只改
+`data/watchlist.json`，不用碰任务本身**。
+
 ---
 
 ## 第 8 步 · 以后怎么更新

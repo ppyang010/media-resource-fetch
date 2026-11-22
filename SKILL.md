@@ -19,7 +19,7 @@ agent_created: true
 | 项 | 值 |
 |:--|:--|
 | 代码目录 | `<skill>\scripts`（跟着 skill 走） |
-| 数据目录（台账） | `<skill>\data`，可用环境变量 `MEDIA_FETCH_DATA` 改 |
+| 数据目录（台账 + 追更清单） | `<skill>\data`，可用环境变量 `MEDIA_FETCH_DATA` 改 |
 | Python | 任意 **3.9+**，只用标准库 |
 | 夸克授权 | 环境变量 `QUARK_COOKIE` → 配置文件 `~/.workbuddy/media-fetch.json` |
 | 微博授权（可选） | 环境变量 `WEIBO_COOKIE` → 同文件 `weibo_cookie`（只填了才能用 `weibo.py`） |
@@ -63,6 +63,9 @@ cookie 从哪来、**cookie 是否真能列目录**（很多人以为 cookie 还
 ```powershell
 & $py sync_library.py
 ```
+
+> 文件不存在（刚装的干净副本）就**当作空库**，直接进第 1 步；第一次转存后会自动生成。
+> `references/resource-library.example.md` 是分发用的空模板，别拿它当真实数据。
 
 ---
 
@@ -244,6 +247,81 @@ curl -s --noproxy '*' "https://box.jiugeku.com/sitemap.xml" -o /tmp/sm.xml
 
 ---
 
+## 第 3 步 · 追更（订阅清单）
+
+「在追哪些剧」记在 `data/watchlist.json`，**这是唯一事实来源**。
+
+自动任务的 prompt 不该硬编码剧名——它只说「跑 `watch.py due`，逐条处理」。
+加剧、减剧、改规格、暂停，全部只改这个文件。这样自动任务不用重写，
+用户问「自动任务都采集哪些」时，答案就是这一个文件。
+
+### 清单字段
+
+| 字段 | 用途 |
+|:--|:--|
+| `id` / `title` | 标识，`watch.py` 的命令用 `--id` 指 |
+| `dir` | 落盘目录（`quark_save.py` 的目标） |
+| `active` | `false` = 暂停，自动任务跳过 |
+| `cadence` | 更新节奏，给人看 |
+| `next_due` | **下次该看的时间**，`watch.py due` 按它筛 |
+| `have` | 已有到哪一集，补完要更新 |
+| `keywords` | 微博搜索词，`{N}` 是期数占位 |
+| `prefer` | 判据，见下 |
+| `sources` | 渠道顺序，如 `["weibo","jiugeku","kkpans"]` |
+| `pending` | 待升级列表（先收了压缩版的那些） |
+
+`prefer` 是「什么算到位」的标准：
+
+| 子字段 | 含义 |
+|:--|:--|
+| `label` | 规格名，如 `4K`、`4K HDR 60帧` |
+| `patterns` | 文件名/目录名必须命中其一，如 `["4K","2160"]` |
+| `path` | 多版本并列时限定父目录名子串，如 `60帧` |
+| `min_mb` | **低于这个体积视为压缩版/不完整** |
+
+### 命令
+
+```powershell
+& $py watch.py list                      # 看所有在追的
+& $py watch.py due                       # 只列到期该查的（自动任务第一步）
+& $py watch.py add --title "某某" --dir "/00影视-待看/某某" `
+      --cadence "每晚 19:30 更 2 集" --next-due "2026-11-23 20:00"
+& $py watch.py done --id jczcf-s4 --episode "第8期上" --next-due "2026-11-28 13:00"
+& $py watch.py pending-add --id jczcf-s4 --file "xxx.mp4" --got "906M 压缩版" --want "4K"
+& $py watch.py pending-done --id jczcf-s4 --file "xxx.mp4"
+& $py watch.py set --id jczcf-s4 --field active --value false    # 不追了
+```
+
+### 压缩版策略：先收再升级
+
+用户的偏好是「**优先有资源**」——不要因为不是 4K 就不转，让用户干等。
+
+正确流程：
+
+1. **到点了先找**。最新版体积 `< prefer.min_mb` → **先转进来**，别空手而归
+2. **记一笔待升级**：`watch.py pending-add --id <id> --file <文件名> --got "906M 压缩版" --want "4K"`
+3. **汇报时说清规格**：「现为 906M 压缩版，4K 一般 16:00 后出，已挂待升级」——
+   不要只说「已更新」
+4. **后续轮次先看 pending**。找到达标版本 →
+   转新的 → `quark_dir.py rm "<目录>/<旧文件>" --yes` 删旧的 → `pending-done`
+
+例外：源里根本没有完整版（比如整季只有 720p），那 `prefer.min_mb` 设低一点，
+别让 `pending` 永远清不掉。
+
+### 加一部新剧
+
+```powershell
+& $py watch.py add --title "现在就出发 第四季" --dir "/00影视-待看/现在就出发 第四季" `
+    --kind variety --cadence "每周六/日 12:00" --next-due "2026-11-28 13:00" `
+    --have "第7期下" --keywords "现在就出发" --prefer 4K `
+    --patterns "4K,2160" --min-mb 2500 --note "4K 通常 16 点后才出"
+```
+
+`next_due` 要按实际节奏填准——它决定了自动任务什么时候动。填太早会空跑，
+填太晚用户得多等一天。拿不准就往「节目播出 + 4 小时」填（等 4K 出来）。
+
+---
+
 ## 何时必须先问用户
 
 不要自行决定这几种情况：
@@ -274,6 +352,11 @@ curl -s --noproxy '*' "https://box.jiugeku.com/sitemap.xml" -o /tmp/sm.xml
 摘要如下，完整版（含接口参数、报错原文）见 `references/known-issues.md`：
 
 - **微博链接寿命约 6 天**。两个样本都是第 6 天 404。看到就转，别存链接。
+- **抢发的 906M「占位压缩版」别当成完整版**。播出后 1-2 小时内，多个分享体积一致
+  （都 906/907M）只能说明它们互转同一个源。判据：和同系列比，低于 1/5 就是残的。
+- **中午播出的综艺，4K 要等 15:00–16:30**。这之前只有 906M–1.8G 的压缩版。
+- **标题写的规格不作数**。有帖写「4K高码」而分享里只有 1.8G 1080p，只看
+  `probe_share.py` 的实际体积。
 - **微博只管 weibo.com 的 cookie**。`m.weibo.cn` 不认同一份凭据（`api/config` 返回
   `login:false`），别在 m 站上浪费请求；搜索走 `/ajax/statuses/search`。
 - **搜索结果的 `t.cn` 是广告占位**，真链接要再查 `statuses/show` 的 `url_struct[].long_url`。
@@ -294,9 +377,10 @@ curl -s --noproxy '*' "https://box.jiugeku.com/sitemap.xml" -o /tmp/sm.xml
 | `get.py <链接> [--name] [--pick] [--dir] [--dry]` | **主入口**：转存 + 自动归档 + 记账 |
 | `weibo.py search/user/show/check` | 微博搜帖、看搬运号更新、挖帖子里的真实网盘直链 |
 | `probe_share.py <id>` | 只读：列分享里有什么、多大 |
-| `quark_save.py <id> <关键词> <目录>` | 只要分享里某几个文件（`--all` 全要） |
-| `quark_dir.py ls/mkdir/move/rm` | 网盘目录操作（`rm` 必须 `--yes`） |
+| `quark_save.py <id> <关键词> <目录> [--path <目录名子串>]` | 只要分享里某几个文件（`--all` 全要；`--path` 在多版本并列时按目录挑） |
+| `quark_dir.py ls/mkdir/move/rm` | 网盘目录操作（`rm` 删目录或单个文件，必须 `--yes`） |
 | `res.py list/check/add/set/rm` | 台账：看记录、验链接死活、增删改 |
+| `watch.py list/due/add/set/done/pending-add/pending-done` | 追更清单：在追哪些剧、什么时候到期、哪条待升级 |
 | `sync_library.py` | 把台账刷成 `references/resource-library.md` 快照 |
 | `check_env.py` | 环境自检，开工前先跑 |
 

@@ -19,8 +19,10 @@
 | 多源找链接 | 微博搜帖（带 cookie 最快）、资源站搜索、sitemap 兜底、免登录镜像页 |
 | 选择性转存 | 合集里只取要的那一集，不用把 387G 全拉下来 |
 | 自动归档 | 有干净文件夹名就沿用，没有就按剧名建；同名目录复用不产生 `xxx(1)` |
+| 追更订阅 | `data/watchlist.json` 记在追哪些剧、什么规格、下次何时看；自动任务只读它，不硬编码剧名 |
+| 先收再升级 | 只有压缩版时先转进来，记一笔「待升级」，等 4K 出了再替换并删旧文件 |
 | 台账 | `data/resources.jsonl` 记录找到过什么、转没转、在哪 |
-| 环境自检 | `check_env.py` 六项检查，含 cookie 是否真能用 |
+| 环境自检 | `check_env.py` 七项检查，含 cookie 是否真能用 |
 
 ## 安装
 
@@ -75,9 +77,18 @@ python weibo.py search "剧名 第N期" --quark    # 微博搜帖，只出带夸
 python weibo.py user <uid> --quark            # 盯某个搬运号有没有更新
 
 python probe_share.py <id>                    # 只看分享里有什么、多大
-python quark_dir.py ls "/00影视-待看"          # 网盘目录操作
+python quark_dir.py ls "/00影视-待看"          # 网盘目录操作（rm 删目录或单个文件）
 python res.py list                            # 看台账
+
+python watch.py list                          # 看在追哪些剧
+python watch.py due                           # 只列现在到期该查的
+python watch.py add --title "某某剧" --dir "/00影视-待看/某某剧" \
+    --cadence "每晚 19:30" --next-due "2026-11-23 20:00"
+python watch.py pending-add --id 某某剧 --file "xx.mp4" --got "906M 压缩版" --want 4K
 ```
+
+追更清单是 `data/watchlist.json`（个人数据，不进仓库）。想挂自动追更，
+把 `watchlist.example.json` 拷成 `data/watchlist.json`，只改 `next_due` 和规格判据即可。
 
 完整流程、文件夹规则、何时必须先问用户，见 `SKILL.md`。
 
@@ -95,10 +106,12 @@ scripts/
   weibo.py                微博检索，挖帖子里的真实网盘直链
   probe_share.py          只读探测分享内容
   quark_save.py           选择性转存
-  quark_dir.py            网盘目录 ls/mkdir/move/rm
+  quark_dir.py            网盘目录 ls/mkdir/move/rm（rm 支持单个文件）
   res.py                  台账增删改查
+  watch.py                追更清单：在追哪些剧、何时到期、哪条待升级
   check_env.py            环境自检
   mplib.py                公共层：配置、HTTP、任务轮询
+watchlist.example.json    追更清单模板（拷成 data/watchlist.json 再用）
 pack.py / install.py      打包 / 安装
 ```
 

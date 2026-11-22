@@ -7,7 +7,7 @@
   python quark_dir.py mkdir "/00影视-待看/午夜规则"        # 逐级建，已存在就复用
   python quark_dir.py move "/00影视-待看" "/00影视-待看/午夜规则" 1.mp4 2.mp4 03.mp4
   python quark_dir.py ls "/00影视-待看/午夜规则"           # 看目录里有什么
-  python quark_dir.py rm "/00影视-待看/某某" --yes          # 删除目录（含内容，必须 --yes）
+  python quark_dir.py rm "/00影视-待看/某某" --yes          # 删目录（含内容）或单个文件，必须 --yes
 
 端点（都带 pr=ucpro&fr=pc）：
   建目录  POST drive-pc /1/clouddrive/file
@@ -157,27 +157,53 @@ def cmd_move(argv: list[str]) -> int:
 
 
 def cmd_rm(argv: list[str]) -> int:
-    """删除一个目录（含内容）。必须显式带 --yes，避免手滑。"""
+    """删除目录或单个文件。必须显式带 --yes，避免手滑。
+
+    路径先按目录解析；解析不到就当文件处理——拆出父目录，在父目录里按
+    文件名找 fid。之前只认目录，删单个文件会报「目录不存在」，
+    处理重复版本时很别扭。
+    """
     args = [a for a in argv if not a.startswith("--")]
     if not args:
-        print("用法：rm <路径> --yes")
+        print("用法：rm <路径> --yes        # 目录或单个文件都行")
         return 1
-    path = args[0]
+    path = args[0].rstrip("/")
     if path.strip("/") == "":
         print("拒绝删除根目录")
         return 1
     if "--yes" not in argv:
-        print(f"这会删除「{path}」及其全部内容。确认请重跑并加 --yes")
+        print(f"这会删除「{path}」（目录则连同内容）。确认请重跑并加 --yes")
         return 1
-    fid = resolve(path)
-    res = call("POST", "file/delete", {"filelist": [fid]})
+
+    target_fid, kind, size = None, "", 0
+    try:
+        target_fid = resolve(path)
+        kind = "目录"
+    except SystemExit:
+        parent, _, name = path.rpartition("/")
+        parent = parent or "/"
+        pfid = resolve(parent)
+        for f in list_dir(pfid):
+            if str(f.get("file_name")) == name:
+                target_fid = str(f.get("fid"))
+                kind = "目录" if f.get("dir") else "文件"
+                size = int(f.get("size") or 0)
+                break
+        if not target_fid:
+            print(f"路径不存在（既不是目录也没有同名文件）：{path}")
+            return 1
+
+    label = f"{kind} {path}"
+    if size:
+        label += f"（{size/1024**3:.2f}G）" if size > 1024**3 else f"（{size/1024**2:.0f}M）"
+    res = call("POST", "file/delete", {"filelist": [target_fid]})
     if res.get("code") not in (0, None):
         print("删除失败：", json.dumps(res, ensure_ascii=False)[:200])
         return 1
     task_id = (res.get("data") or {}).get("task_id")
     if task_id:
         wait_task(task_id, "删除")
-    print(f"已删除 {path}")
+    print(f"已删除 {label}")
     return 0
 
 

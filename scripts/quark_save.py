@@ -24,9 +24,11 @@
   - 读接口走 drive-h，写接口走 drive.quark.cn
 
 用法：
-  python quark_save.py <share_id或链接> <文件名关键词> <目标目录> [--all] [--dry]
+  python quark_save.py <share_id或链接> <文件名关键词> <目标目录> [--all] [--dry] [--path <目录名子串>]
   python quark_save.py 053c57393863 .mp4 "/00影视-待看" --all
   python quark_save.py 0c220e4f0c37 第四期上 "/00影视-待看" --dry
+  # 分享里并列 4K/1080p/DV 三套同名文件时，按目录挑：
+  python quark_save.py d9fc07968b0c 05.mkv "/00影视-待看/某剧" --path 60帧
 """
 
 from __future__ import annotations
@@ -80,8 +82,13 @@ def dir_fid(path: str) -> str:
     return cur
 
 
-def find_files(share_id: str, keyword: str) -> tuple[list[dict], str]:
-    """递归找文件名包含 keyword 的文件，返回 (命中列表, stoken)。"""
+def find_files(share_id: str, keyword: str, path_filter: str | None = None) -> tuple[list[dict], str]:
+    """递归找文件名包含 keyword 的文件，返回 (命中列表, stoken)。
+
+    path_filter 给定时，只在**目录名含该子串**的分支里匹配。
+    用途：同一个分享里常并列 4K/1080p/DV 三套同名文件（都叫 05.mkv），
+    只靠文件名分不出要哪个，得按目录挑。
+    """
     tok = quark("POST", "share/sharepage/token", {
         "pwd_id": share_id, "passcode": "",
         "support_visit_limit_private_share": True,
@@ -92,7 +99,7 @@ def find_files(share_id: str, keyword: str) -> tuple[list[dict], str]:
 
     hits: list[dict] = []
 
-    def walk(fid: str, depth: int) -> None:
+    def walk(fid: str, depth: int, trail: str) -> None:
         if depth > 4:
             return
         res = quark("GET", "share/sharepage/detail", params={
@@ -103,19 +110,23 @@ def find_files(share_id: str, keyword: str) -> tuple[list[dict], str]:
         for f in (res.get("data") or {}).get("list") or []:
             name = str(f.get("file_name") or "")
             if f.get("dir"):
-                walk(str(f.get("fid")), depth + 1)
+                walk(str(f.get("fid")), depth + 1, f"{trail}/{name}")
             elif keyword in name:
+                if path_filter and path_filter not in trail:
+                    continue
                 hits.append({
                     "fid": str(f.get("fid")),
                     "token": str(f.get("share_fid_token")),
                     "name": name,
                     "size": int(f.get("size") or 0),
+                    "path": trail.strip("/"),
                 })
 
-    walk("0", 1)
+    walk("0", 1, "")
     if not hits:
-        raise SystemExit(f"分享里没找到文件名包含「{keyword}」的文件")
-    hits.sort(key=lambda x: x["name"])
+        tip = f"（限定目录含「{path_filter}」）" if path_filter else ""
+        raise SystemExit(f"分享里没找到文件名包含「{keyword}」的文件{tip}")
+    hits.sort(key=lambda x: (x["name"], x["size"]))
     return hits, stoken
 
 
@@ -142,17 +153,20 @@ def main(argv: list[str]) -> int:
     raw, keyword, target = argv[1], argv[2], argv[3]
     dry = "--dry" in argv
     take_all = "--all" in argv
+    path_filter = argv[argv.index("--path") + 1] if "--path" in argv else None
     share_id = raw.rstrip("/").split("/")[-1].replace("s/", "")
 
     mp.init_cookie()
     print(f"分享 {share_id} → 目标 {target}")
+    if path_filter:
+        print(f"限定目录：含「{path_filter}」")
 
     target_fid = dir_fid(target)
     print(f"目标目录 fid = {target_fid}")
 
-    hits, stoken = find_files(share_id, keyword)
+    hits, stoken = find_files(share_id, keyword, path_filter)
     for h in hits:
-        print(f"  命中 {h['name']:<36} {human(h['size'])}")
+        print(f"  命中 {h['name']:<36} {human(h['size']):<8} {h.get('path','')}")
     if not take_all:
         hits = hits[:1]
         print(f"（不加 --all 只转第一个：{hits[0]['name']}）")

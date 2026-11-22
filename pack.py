@@ -3,14 +3,17 @@
 """把本 skill 打包成一个可分发的 zip。
 
 用法（在本文件所在目录执行）：
-  python pack.py                # 打包，含台账数据
-  python pack.py --no-data      # 打包，但不含 data/（不带私人记录）
+  python pack.py                # 打包，**默认不含 data/**（安全默认）
+  python pack.py --with-data    # 连台账和追更清单一起打包（只给自己搬机器用）
   python pack.py --out D:\\tmp   # 指定输出目录
 
 产物：dist/media-resource-fetch-<version>.zip + 同名 .sha256
 
 分发出去的内容**不含**夸克 cookie（cookie 在 ~/.workbuddy/media-fetch.json，
 不在 skill 目录内）。对方需要自己配一次。
+
+注意：data/ 里是个人台账和追更清单，含网盘路径与观看记录，
+**默认排除**。历史上默认包含过一次，已发的 zip 里有私人数据，别重犯。
 """
 
 from __future__ import annotations
@@ -27,6 +30,10 @@ DIST = ROOT / "dist"
 EXCLUDE_DIRS = {"__pycache__", "dist", ".git", ".idea", ".vscode"}
 EXCLUDE_SUFFIX = {".pyc", ".pyo", ".zip", ".sha256"}
 EXCLUDE_FILES = {".DS_Store", "Thumbs.db", "desktop.ini"}
+# 相对路径精确排除：这些是个人数据，打进去就等于把观看记录公开
+EXCLUDE_REL = {
+    "references/resource-library.md",   # 台账渲染快照，含片名/网盘路径/来源
+}
 
 
 def version() -> str:
@@ -44,6 +51,8 @@ def collect(with_data: bool) -> list[Path]:
             continue
         if p.suffix.lower() in EXCLUDE_SUFFIX or p.name in EXCLUDE_FILES:
             continue
+        if rel.as_posix() in EXCLUDE_REL:
+            continue
         if not with_data and rel.parts[0] == "data":
             continue
         files.append(p)
@@ -55,7 +64,7 @@ def human(n: int) -> str:
 
 
 def main(argv: list[str]) -> int:
-    with_data = "--no-data" not in argv
+    with_data = "--with-data" in argv
     out_dir = DIST
     if "--out" in argv:
         i = argv.index("--out")
@@ -88,7 +97,9 @@ def main(argv: list[str]) -> int:
     print(f"  {zip_path}  ({human(zip_path.stat().st_size)})")
     print(f"  sha256 {digest}")
     if not with_data:
-        print("  注意：未包含 data/，对方从空台账开始")
+        print("  未包含 data/（台账与追更清单属于个人数据，默认不打包）")
+    else:
+        print("  已包含 data/ —— 只给自己搬机器用，不要挂到公开 Release")
     print()
     print("分发后对方怎么用：")
     print("  1. 解压，把 media-resource-fetch 文件夹放进 ~/.workbuddy/skills/")

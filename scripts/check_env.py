@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""环境自检：确认「找资源 → 转存」这条链路现在能不能跑。
+"""环境自检：确认「找资源 → 转存 → 追更」这条链路现在能不能跑。
 
-检查五件事：
+检查项：
   1. 工具脚本是否齐（skill 自带，不需要外部目录）
   2. Python 版本是否够
   3. 数据目录是否可写（台账放哪）
   4. 夸克授权从哪来（环境变量 / 配置文件）
   5. cookie 是否真能列目录（不是只看非空）
+  6. 微博授权是否有效（可选，不阻塞）
+  7. 追更清单是否可用（可选，不阻塞）
 
 用法：
   python check_env.py
@@ -28,7 +30,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import mplib as mp  # noqa: E402
 
 NEEDED = ["get.py", "res.py", "quark_save.py", "quark_dir.py", "probe_share.py",
-          "mplib.py", "sync_library.py", "weibo.py"]
+          "mplib.py", "sync_library.py", "weibo.py", "watch.py"]
 
 problems: list[str] = []
 
@@ -176,6 +178,28 @@ def check_weibo() -> None:
     ok(f"搜索接口有效，返回 {len(data['statuses'])} 条")
 
 
+def check_watchlist() -> None:
+    """追更清单是可选件：没有它照样能手动触发，只是没法挂自动任务。"""
+    print("7) 追更清单（可选）")
+    f = mp.data_dir() / "watchlist.json"
+    if not f.is_file():
+        print("       （没有清单。要挂自动追更就先 `watch.py add` 加一部，")
+        print("        或把根目录的 watchlist.example.json 拷成 data/watchlist.json 再改）")
+        return
+    try:
+        d = json.loads(f.read_text(encoding="utf-8"))
+    except Exception as e:
+        bad(f"JSON 解析失败：{e}", block=False)
+        return
+    shows = [s for s in d.get("shows", []) if s.get("active") is not False]
+    pend = sum(len(s.get("pending") or []) for s in shows)
+    msg = f"{len(shows)} 部在追"
+    if pend:
+        msg += f"，{pend} 条待升级"
+    print(f"       位置：{f}")
+    ok(msg)
+
+
 def main() -> int:
     print("影视资源查找/转存 —— 环境自检\n")
     check_scripts()
@@ -184,6 +208,7 @@ def main() -> int:
     ck = check_cookie()
     check_conn(ck)
     check_weibo()
+    check_watchlist()
 
     print()
     if problems:

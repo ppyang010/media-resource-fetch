@@ -138,8 +138,12 @@ python get.py <分享id> --dry      # 3. 预演一次转存
 | 项 | 位置 | 能否改 |
 |:--|:--|:--|
 | 台账 `resources.jsonl` | `<skill>\data\` | 环境变量 `MEDIA_FETCH_DATA` |
+| 追更清单 `watchlist.json` | 同目录，和台账一起走 | 同上 |
 | 资源库快照 | `<skill>\references\resource-library.md` | 由台账渲染，不要手改 |
 | cookie | `~/.workbuddy/media-fetch.json` | 环境变量 `MEDIA_FETCH_CONFIG` 可改路径 |
+
+`data/` 整个目录都是个人数据（台账 + 追更清单），**已被 `.gitignore` 排除**。
+分发用的模板是根目录的 `watchlist.example.json`，对方拷成 `data/watchlist.json` 再改。
 
 想把台账放到网盘同步目录、多台机器共用：
 
