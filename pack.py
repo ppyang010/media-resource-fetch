@@ -27,7 +27,9 @@ ROOT = Path(__file__).resolve().parent
 DIST = ROOT / "dist"
 
 # 永远不打包的东西
-EXCLUDE_DIRS = {"__pycache__", "dist", ".git", ".idea", ".vscode"}
+# .workbuddy 是 automation 在 cwds（scripts 目录）下生成的运行记录，
+# 含剧名/集数等个人数据，必须排除，否则会随包分发出去。
+EXCLUDE_DIRS = {"__pycache__", "dist", ".git", ".workbuddy", ".idea", ".vscode"}
 EXCLUDE_SUFFIX = {".pyc", ".pyo", ".zip", ".sha256"}
 EXCLUDE_FILES = {".DS_Store", "Thumbs.db", "desktop.ini"}
 # 相对路径精确排除：这些是个人数据，打进去就等于把观看记录公开
