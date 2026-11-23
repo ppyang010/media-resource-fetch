@@ -233,7 +233,7 @@ def cmd_done(args) -> int:
         s["next_due"] = args.next_due
     s["last_check"] = dt.datetime.now().strftime(TS_FMT)
     save(data)
-    print(f"{s['title']} 已更新：第 {s.get('have','—')}，下次 {s.get('next_due','—')}")
+    print(f"{s['title']} 已更新：{s.get('have') or '—'}，下次 {s.get('next_due') or '—'}")
     return 0
 
 

@@ -207,6 +207,34 @@ def cmd_rm(argv: list[str]) -> int:
     return 0
 
 
+def cmd_rename(argv: list[str]) -> int:
+    """重命名单个文件或目录。转存来的文件名常带来源后缀，统一命名时用。"""
+    args = [a for a in argv if not a.startswith("--")]
+    if len(args) < 2:
+        print("用法：rename <目录/旧名> <新名>")
+        return 1
+    old, new = args[0].rstrip("/"), args[1]
+    parent, _, name = old.rpartition("/")
+    pfid = resolve(parent or "/")
+    target = None
+    for f in list_dir(pfid):
+        if str(f.get("file_name")) == name:
+            target = f
+            break
+    if not target:
+        print(f"没找到：{old}")
+        return 1
+    res = call("POST", "file/rename", {
+        "fid": str(target.get("fid")),
+        "file_name": new,
+    })
+    if res.get("code") not in (0, None):
+        print("重命名失败：", json.dumps(res, ensure_ascii=False)[:200])
+        return 1
+    print(f"已重命名：{name} → {new}")
+    return 0
+
+
 def main(argv: list[str]) -> int:
     if len(argv) < 2:
         print(__doc__)
@@ -221,6 +249,8 @@ def main(argv: list[str]) -> int:
         return cmd_move(rest)
     if cmd == "rm":
         return cmd_rm(rest)
+    if cmd == "rename":
+        return cmd_rename(rest)
     print(__doc__)
     return 0
 

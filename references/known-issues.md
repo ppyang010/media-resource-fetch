@@ -22,6 +22,8 @@
                      {pdir_fid, file_name, dir_path:"", dir_init_lock:false}  → data.fid
 写 - 移动          POST drive-pc.quark.cn /1/clouddrive/file/move
                      {filelist:[...], to_pdir_fid}     → task_id
+写 - 重命名        POST drive-pc.quark.cn /1/clouddrive/file/rename
+                     {fid, file_name}                   → 200，无 task_id
 写 - 删除          POST drive-pc.quark.cn /1/clouddrive/file/delete
                      {filelist:[...]}                  → task_id
 读 - 任务          GET  drive-h.quark.cn /1/clouddrive/task?task_id&retry_index

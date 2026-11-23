@@ -106,7 +106,7 @@ scripts/
   weibo.py                微博检索，挖帖子里的真实网盘直链
   probe_share.py          只读探测分享内容
   quark_save.py           选择性转存
-  quark_dir.py            网盘目录 ls/mkdir/move/rm（rm 支持单个文件）
+  quark_dir.py            网盘目录 ls/mkdir/move/rename/rm（rm 支持单个文件）
   res.py                  台账增删改查
   watch.py                追更清单：在追哪些剧、何时到期、哪条待升级
   check_env.py            环境自检

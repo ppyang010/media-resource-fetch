@@ -378,7 +378,7 @@ curl -s --noproxy '*' "https://box.jiugeku.com/sitemap.xml" -o /tmp/sm.xml
 | `weibo.py search/user/show/check` | 微博搜帖、看搬运号更新、挖帖子里的真实网盘直链 |
 | `probe_share.py <id>` | 只读：列分享里有什么、多大 |
 | `quark_save.py <id> <关键词> <目录> [--path <目录名子串>]` | 只要分享里某几个文件（`--all` 全要；`--path` 在多版本并列时按目录挑） |
-| `quark_dir.py ls/mkdir/move/rm` | 网盘目录操作（`rm` 删目录或单个文件，必须 `--yes`） |
+| `quark_dir.py ls/mkdir/move/rename/rm` | 网盘目录操作（`rm` 删目录或单个文件，必须 `--yes`；`rename` 统一命名） |
 | `res.py list/check/add/set/rm` | 台账：看记录、验链接死活、增删改 |
 | `watch.py list/due/add/set/done/pending-add/pending-done` | 追更清单：在追哪些剧、什么时候到期、哪条待升级 |
 | `sync_library.py` | 把台账刷成 `references/resource-library.md` 快照 |
